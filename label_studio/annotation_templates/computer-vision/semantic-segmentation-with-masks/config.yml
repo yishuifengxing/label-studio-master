@@ -1,0 +1,15 @@
+title: 带遮罩的语义切分
+type: community
+group: 计算机视觉
+order: 2
+image: /static/templates/semantic-segmentation-with-masks.png
+details: <h1>Draw masks around the object with the brush tool</h1>
+config: '
+<View>
+  <Image name="image" value="$image" zoom="true"/>
+  <BrushLabels name="tag" toName="image">
+    <Label value="Airplane" background="rgba(255, 0, 0, 0.7)"/>
+    <Label value="Car" background="rgba(0, 0, 255, 0.7)"/>
+  </BrushLabels>
+</View>
+'

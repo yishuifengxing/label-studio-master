@@ -1,0 +1,17 @@
+title: 命名实体识别
+type: community
+group: 自然语言处理
+image: /static/templates/named-entity-recognition.png
+details: <h1>Extract named entities from text</h1>
+config: '
+<View>
+  <Labels name="label" toName="text">
+    <Label value="PER" background="red"/>
+    <Label value="ORG" background="darkorange"/>
+    <Label value="LOC" background="orange"/>
+    <Label value="MISC" background="green"/>
+  </Labels>
+
+  <Text name="text" value="$ner"/>
+</View>
+'

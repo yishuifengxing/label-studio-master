@@ -1,0 +1,60 @@
+# 1x3 grid
+title_bucket_prefix: &title_bucket_prefix
+  - type: text
+    name: title
+    label: 存储标题
+  - type: text
+    name: bucket
+    label: Bucket 名称
+    required: true
+  - type: text
+    name: prefix
+    label: Bucket 前缀
+
+ImportStorage:
+  # Title, Bucket, Prefix
+  - columnCount: 3
+    fields: *title_bucket_prefix
+  # Regex filter
+  - columnCount: 1
+    fields:
+      - type: text
+        name: regex_filter
+        label: 文件过滤器正则表达式
+        placeholder: '.*csv or .*(jpe?g|png|tiff) or .\w+-\d+.text'
+        validators:
+          - regexp
+
+  # 2 columns grid
+  - columnCount: 2
+    columns:
+      - width: 371
+        fields:
+          - type: toggle
+            name: use_blob_urls
+            label: 将每个bucket对象重新创建为源文件
+            description: 如果未选中，则将每个bucket对象视为JSON格式的任务。（可选）
+      - fields:
+          - type: toggle
+            name: presign
+            label: 使用预先签名的URL
+            value: true
+          - type: counter
+            name: presign_ttl
+            value: 1
+            min: 1
+            dependency: presign
+
+  # Regex filter
+  - columnCount: 1
+    fields:
+      - type: password
+        name: google_application_credentials
+        label: Google 应用证书
+        placeholder: 复制并粘贴credentials.json中的内容
+        validators:
+          - json
+
+ExportStorage:
+  - columnCount: 3
+    fields: *title_bucket_prefix

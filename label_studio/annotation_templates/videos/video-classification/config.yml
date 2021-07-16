@@ -1,0 +1,14 @@
+title: 视频分类
+type: community
+group: 视频
+image: /static/templates/video-classification.png
+details: <h1>Classify video</h1>
+config: '
+<View>
+  <HyperText name="video" value="$video"/>
+  <Choices name="choice" toName="video" showInLine="true">
+    <Choice value="Blurry" />
+    <Choice value="Sharp" />
+  </Choices>
+</View>
+'
