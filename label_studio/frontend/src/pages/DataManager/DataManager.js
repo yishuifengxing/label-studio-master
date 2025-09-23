@@ -525,6 +525,7 @@ DataManagerPage.context = ({dmRef}) => {
   const [currentReviewStatus, setCurrentReviewStatus] = useState('pending');
   const [pendingDecision, setPendingDecision] = useState(null);
 
+
   const [userRole, setUserRole] = useState(() => {
     const storedRole = getStoredRole();
 
@@ -643,7 +644,7 @@ DataManagerPage.context = ({dmRef}) => {
     };
   }, [dmRef, extractTaskInfo]);
 
-  const sendReviewDecision = useCallback(async (decision) => {
+  const sendReviewDecision = useCallback(async (decision, options = {}) => {
     if (!dmRef) return;
 
     const selected = dmRef.store?.taskStore?.selected;
@@ -654,9 +655,18 @@ DataManagerPage.context = ({dmRef}) => {
     setPendingDecision(decision);
 
     try {
+      const comment = options.comment ?? '';
+
       const result = await dmRef.apiCall?.('reviewDecision', { taskID: taskId }, {
-        body: { decision, comment: '' },
+        body: { decision, comment },
       });
+
+      if (result?.error || (result?.response && result.response?.detail)) {
+        const responseDetail = typeof result?.response === 'string'
+          ? result.response
+          : result?.response?.detail;
+        throw new Error(responseDetail || result.error || '提交审核结果失败');
+      }
 
       if (result) {
         const loadTask = dmRef.store?.taskStore?.loadTask;
@@ -665,12 +675,33 @@ DataManagerPage.context = ({dmRef}) => {
           await loadTask.call(dmRef.store.taskStore, taskId, { select: true });
         }
 
+        const updatedStatus = result?.review_status ?? decision;
+        if (updatedStatus) {
+          setCurrentReviewStatus(String(updatedStatus || 'pending').toLowerCase());
+        }
+
         extractTaskInfo();
       }
+      return true;
+    } catch (error) {
+      console.error('[review] Failed to submit review decision', error);
+      const detail = error?.message ?? '提交审核结果时出现错误，请稍后重试。';
+      showReviewError(detail);
+      return false;
     } finally {
       setPendingDecision(null);
     }
-  }, [dmRef, extractTaskInfo, resolveTaskId]);
+  }, [dmRef, extractTaskInfo, resolveTaskId, showReviewError]);
+
+  const handleApprove = useCallback(() => {
+    sendReviewDecision('approved', { comment: '' });
+  }, [sendReviewDecision]);
+
+  const handleReject = useCallback(async () => {
+    const comment = await requestRejectComment();
+    if (!comment) return;
+    await sendReviewDecision('rejected', { comment });
+  }, [requestRejectComment, sendReviewDecision]);
 
   const statusText = REVIEW_STATUS_LABELS[currentReviewStatus] ?? REVIEW_STATUS_LABELS.pending;
   const hasTask = !!currentTaskId;
@@ -699,7 +730,7 @@ DataManagerPage.context = ({dmRef}) => {
             look="primary"
             disabled={approveDisabled}
             waiting={pendingDecision === 'approved'}
-            onClick={() => sendReviewDecision('approved')}
+            onClick={handleApprove}
             title={approveDisabled && disabledMessage ? disabledMessage : undefined}
           >
             通过
@@ -708,7 +739,7 @@ DataManagerPage.context = ({dmRef}) => {
             size="compact"
             disabled={rejectDisabled}
             waiting={pendingDecision === 'rejected'}
-            onClick={() => sendReviewDecision('rejected')}
+            onClick={handleReject}
             title={rejectDisabled && disabledMessage ? disabledMessage : undefined}
           >
             驳回
